@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kalkulator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f0f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .calc {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 16px;
+      padding: 1.25rem;
+      width: 300px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+
+    .display {
+      background: #f5f5f5;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      text-align: right;
+      min-height: 90px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .display-sub {
+      font-size: 13px;
+      color: #999;
+      min-height: 18px;
+      word-break: break-all;
+    }
+
+    .display-main {
+      font-size: 36px;
+      font-weight: 500;
+      color: #111;
+      word-break: break-all;
+      line-height: 1.2;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .btn {
+      border: 1px solid #e0e0e0;
+      background: #fff;
+      color: #111;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 400;
+      height: 60px;
+      cursor: pointer;
+      transition: background 0.1s, transform 0.08s;
+    }
+
+    .btn:hover { background: #f5f5f5; }
+    .btn:active { transform: scale(0.95); }
+
+    .btn-op {
+      color: #185FA5;
+      background: #E6F1FB;
+      border-color: #B5D4F4;
+    }
+    .btn-op:hover { background: #cce4f7; }
+
+    .btn-eq {
+      background: #185FA5;
+      color: #fff;
+      border-color: #185FA5;
+      font-size: 20px;
+    }
+    .btn-eq:hover { background: #0C447C; }
+
+    .btn-clear {
+      color: #A32D2D;
+      background: #FCEBEB;
+      border-color: #F7C1C1;
+    }
+    .btn-clear:hover { background: #f7d0d0; }
+
+    .btn-wide { grid-column: span 2; }
+
+    @media (prefers-color-scheme: dark) {
+      body { background: #1a1a1a; }
+      .calc { background: #2a2a2a; border-color: #444; box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
+      .display { background: #1e1e1e; border-color: #3a3a3a; }
+      .display-sub { color: #666; }
+      .display-main { color: #f0f0f0; }
+      .btn { background: #2a2a2a; border-color: #3a3a3a; color: #f0f0f0; }
+      .btn:hover { background: #363636; }
+      .btn-op { color: #85B7EB; background: #042C53; border-color: #0C447C; }
+      .btn-op:hover { background: #0C447C; }
+      .btn-eq { background: #185FA5; color: #fff; }
+      .btn-eq:hover { background: #0C447C; }
+      .btn-clear { color: #F09595; background: #501313; border-color: #791F1F; }
+      .btn-clear:hover { background: #791F1F; }
+    }
+  </style>
+</head>
+<body>
+  <div class="calc">
+    <div class="display">
+      <div class="display-sub" id="sub"></div>
+      <div class="display-main" id="main">0</div>
+    </div>
+    <div class="grid">
+      <button class="btn btn-clear" onclick="calc('AC')">AC</button>
+      <button class="btn btn-clear" onclick="calc('+/-')">+/−</button>
+      <button class="btn btn-op"    onclick="calc('%')">%</button>
+      <button class="btn btn-op"    onclick="calc('÷')">÷</button>
+
+      <button class="btn" onclick="calc('7')">7</button>
+      <button class="btn" onclick="calc('8')">8</button>
+      <button class="btn" onclick="calc('9')">9</button>
+      <button class="btn btn-op" onclick="calc('×')">×</button>
+
+      <button class="btn" onclick="calc('4')">4</button>
+      <button class="btn" onclick="calc('5')">5</button>
+      <button class="btn" onclick="calc('6')">6</button>
+      <button class="btn btn-op" onclick="calc('−')">−</button>
+
+      <button class="btn" onclick="calc('1')">1</button>
+      <button class="btn" onclick="calc('2')">2</button>
+      <button class="btn" onclick="calc('3')">3</button>
+      <button class="btn btn-op" onclick="calc('+')">+</button>
+
+      <button class="btn btn-wide" onclick="calc('0')">0</button>
+      <button class="btn" onclick="calc('.')">.</button>
+      <button class="btn btn-eq"   onclick="calc('=')">=</button>
+    </div>
+  </div>
+
+  <script>
+    let current = '0', prev = '', operator = '', justCalc = false;
+    const mainEl = document.getElementById('main');
+    const subEl  = document.getElementById('sub');
+
+    function update() {
+      mainEl.textContent = current.length > 10
+        ? parseFloat(current).toExponential(4)
+        : current;
+    }
+
+    function calc(val) {
+      if (val === 'AC') {
+        current = '0'; prev = ''; operator = ''; justCalc = false;
+        subEl.textContent = ''; update(); return;
+      }
+      if (val === '+/-') {
+        if (current !== '0') current = current.startsWith('-') ? current.slice(1) : '-' + current;
+        update(); return;
+      }
+      if (val === '%') {
+        current = String(parseFloat(current) / 100);
+        update(); return;
+      }
+      if (['+', '−', '×', '÷'].includes(val)) {
+        if (operator && !justCalc) evaluate();
+        prev = current; operator = val; justCalc = false;
+        subEl.textContent = current + ' ' + val;
+        current = '0'; update(); return;
+      }
+      if (val === '=') {
+        if (!operator) return;
+        subEl.textContent = prev + ' ' + operator + ' ' + current + ' =';
+        evaluate(); operator = ''; justCalc = true; return;
+      }
+      if (val === '.') {
+        if (justCalc) { current = '0'; justCalc = false; }
+        if (!current.includes('.')) current += '.';
+        update(); return;
+      }
+      if (justCalc) { current = '0'; justCalc = false; }
+      current = current === '0' ? val : current + val;
+      if (current.length > 12) return;
+      update();
+    }
+
+    function evaluate() {
+      const a = parseFloat(prev), b = parseFloat(current);
+      let res;
+      if      (operator === '+') res = a + b;
+      else if (operator === '−') res = a - b;
+      else if (operator === '×') res = a * b;
+      else if (operator === '÷') res = b === 0 ? 'Error' : a / b;
+      if (res === 'Error') { current = 'Error'; update(); return; }
+      current = String(parseFloat(res.toPrecision(10)));
+      update();
+    }
+
+    document.addEventListener('keydown', e => {
+      const map = {
+        '0':'0','1':'1','2':'2','3':'3','4':'4',
+        '5':'5','6':'6','7':'7','8':'8','9':'9',
+        '.':'.', '+':'+', '-':'−', '*':'×', '/':'÷',
+        'Enter':'=', 'Backspace':'AC', 'Escape':'AC', '%':'%'
+      };
+      if (map[e.key]) { e.preventDefault(); calc(map[e.key]); }
+    });
+  </script>
+</body>
+</html>
